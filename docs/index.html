@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECOFUTURE</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #d0e6f5, #f0fafc);
+      color: #222;
+    }
+
+    #fullscreenContainer {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    #renderCanvas {
+      width: 50%;
+      height: 100vh;
+      display: block;
+      background-color: #a5d8ff;
+      box-shadow: inset 0 0 20px #7bbaff88;
+    }
+
+    .interface {
+      width: 50%;
+      padding: 32px 40px;
+      background-color: #fff;
+      color: #222;
+      box-sizing: border-box;
+      overflow-y: auto;
+      box-shadow: -6px 0 20px rgba(0, 0, 0, 0.1);
+      font-size: 15px;
+      line-height: 1.4;
+    }
+
+    #divider {
+      width: 8px;
+      cursor: ew-resize;
+      background: #00bcd4;
+      opacity: 0.65;
+      height: 100vh;
+      user-select: none;
+      transition: opacity 0.3s ease;
+    }
+
+    #divider:hover {
+      opacity: 1;
+    }
+
+    .hud {
+      position: fixed;
+      bottom: 20px;
+      left: 65px;
+      display: flex;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 10px 14px;
+      border-radius: 32px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      backdrop-filter: blur(20px);
+      z-index: 9999;
+      pointer-events: auto;
+      align-items: center;
+      user-select: none;
+    }
+
+    .sims-btn {
+      background: linear-gradient(145deg, #a9e6b8, #57c293);
+      border: none;
+      color: white;
+      font-size: 20px;
+      padding: 12px;
+      border-radius: 50%;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 42px;
+      height: 42px;
+    }
+
+    .sims-btn:hover {
+      transform: scale(1.25);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.35);
+    }
+
+    .hud-info {
+      margin-top: 22px;
+      background: rgba(0, 188, 212, 0.12);
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 17px;
+      color: #004d57;
+    }
+
+    #techMenu {
+      display: flex;
+      gap: 10px;
+      margin-left: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    #techMenu.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .tech-btn {
+      background: linear-gradient(145deg, #a9e6b8, #57c293);
+      border: none;
+      color: white;
+      font-size: 18px;
+      padding: 10px;
+      border-radius: 50%;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+      cursor: pointer;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 38px;
+      height: 38px;
+    }
+
+    .tech-btn:hover {
+      transform: scale(1.25);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.35);
+    }
+
+    .sims-btn[title], .tech-btn[title] {
+      position: relative;
+    }
+
+    .sims-btn[title]:hover::after,
+    .tech-btn[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      color: white;
+      padding: 6px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      font-size: 13px;
+      margin-bottom: 8px;
+      pointer-events: none;
+      user-select: none;
+      z-index: 10000;
+      box-shadow: 0 0 6px rgba(0,0,0,0.4);
+    }
+
+    .card-solar {
+      background-color: #f7fdfa;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      padding: 24px 28px;
+      max-width: 400px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #2a4d33;
+      text-align: left;
+      margin: 24px auto 16px auto;
+      line-height: 1.5;
+    }
+
+    .card-solar h2 {
+      color: #3a7d4f;
+      margin-top: 0;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .card-solar ul {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 12px;
+    }
+
+    .card-solar li {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .card-solar button {
+      margin-top: 22px;
+      padding: 12px 26px;
+      background-color: #3a7d4f;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: background 0.35s ease;
+      box-shadow: 0 4px 10px rgba(58,125,79,0.5);
+    }
+
+    .card-solar button:hover {
+      background-color: #2f663f;
+    }
+
+    .card-agua {
+      background-color: #f7fdfa;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      padding: 24px 28px;
+      max-width: 400px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #2a4d33;
+      text-align: left;
+      margin: 24px auto 16px auto;
+      line-height: 1.5;
+    }
+
+    .card-agua h2 {
+      color: #1a73e8;
+      margin-top: 0;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .card-agua ul {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 12px;
+    }
+
+    .card-agua li {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .card-agua p {
+      margin-bottom: 10px;
+    }
+
+    input[type=number] {
+      width: 80px;
+      padding: 6px 10px;
+      margin: 6px 0 18px 0;
+      border-radius: 6px;
+      border: 1.8px solid #a9d8b3;
+      font-size: 15px;
+      transition: border-color 0.3s ease;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    input[type=number]:focus {
+      border-color: #3a7d4f;
+      outline: none;
+      box-shadow: 0 0 8px #3a7d4f88;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 15px;
+      color: #333;
+      display: block;
+      margin-top: 14px;
+    }
+
+    button {
+      background-color: #3a7d4f;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      box-shadow: 0 3px 10px rgba(58,125,79,0.45);
+      margin-top: 8px;
+      user-select: none;
+    }
+
+    button:hover {
+      background-color: #2f663f;
+    }
+
+    #resultado {
+      margin-top: 20px;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #2f4d25;
+    }
+
+    .tooltip-icon {
+      display: inline-block;
+      position: relative;
+      cursor: pointer;
+      font-weight: bold;
+      margin-left: 4px;
+      color: #555;
+    }
+
+    .tooltip-icon .tooltip-text {
+      visibility: hidden;
+      opacity: 0;
+      width: 260px;
+      background-color: #333;
+      color: #fff;
+      text-align: left;
+      border-radius: 6px;
+      padding: 8px 10px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: opacity 0.3s;
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .tooltip-icon:hover .tooltip-text {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .hud-mudancas-simulador {
+      position: fixed;
+      top: 5%;
+      right: 55%;
+      display: flex;
+      gap: 10px;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 10px 14px;
+      border-radius: 32px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      backdrop-filter: blur(20px);
+      user-select: none;
+      align-items: center;
+      z-index: 9999;
+      pointer-events: auto;
+    }
+
+    #mudancasMenu {
+      display: flex;
+      gap: 10px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    #mudancasMenu.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .card-lixo {
+      background-color: #f0f7f0;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      padding: 24px 28px;
+      max-width: 400px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #2a4d33;
+      text-align: left;
+      margin: 24px auto 16px auto;
+      line-height: 1.5;
+    }
+
+    .card-lixo h2 {
+      color: #388e3c;
+      margin-top: 0;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    .card-lixo ul {
+      list-style: none;
+      padding-left: 0;
+      margin-top: 12px;
+    }
+
+    .card-lixo li {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .card-lixo p {
+      margin-bottom: 10px;
+    }
+
+    /* === MEDIA QUERY RESPONSIVA === */
+  @media (max-width: 900px) {
+  #fullscreenContainer {
+    flex-direction: row; /* mantém lado a lado */
+    flex-wrap: wrap;
+  }
+
+  #renderCanvas,
+  .interface {
+    width: 50% !important;
+    height: 100vh !important;
+  }
+
+  #divider {
+    display: none;
+  }
+
+  .hud, .hud-mudancas-simulador {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #techMenu,
+  #mudancasMenu {
+    flex-wrap: wrap;
+  }
+}
+  </style>
+</head>
+<body> <div id="fullscreenContainer">
+    <!-- HUD com botões principais -->
+    <div class="hud">
+      <button id="btnTecnologias" class="sims-btn" title="Tecnologias Sustentáveis">💡</button>
+      <div id="techMenu" aria-label="Menu de Tecnologias Sustentáveis">
+        <button class="tech-btn" id="btnPainel" title="Painel solar e postes">☀️</button>
+        <button class="tech-btn" id="btnToggleTanque" title="Controle de Água">💧</button>
+        <button class="tech-btn" id="btnToggleTrashBins" title="Controle de Lixo">🗑️</button>
+        <!-- <button class="tech-btn" id="btnToggleArvores" title="Controle de Árvore">🌳</button> -->
+      </div>
+      <button id="btnTelaCheia" class="sims-btn" title="Tela cheia">⛶</button>
+    </div>
+
+    <!-- HUD Mudanças Climáticas e Temporais -->
+    <div class="hud-mudancas-simulador">
+      <button id="btnMudancas" class="sims-btn" title="Mudanças Climáticas e Temporais">🌦️</button>
+      <div id="mudancasMenu">
+        <button class="tech-btn" id="btnRain" title="Ligar/Desligar Chuva">🌧️</button>
+        <button class="tech-btn" id="toggleTimeBtn" title="Pausar/Retomar Tempo">⏱️</button>
+      </div>
+    </div>
+
+    <canvas id="renderCanvas"></canvas>
+  
+    <div id="divider"></div>
+    <div class="interface">
+
+      <!-- Conteúdo Energia Solar -->
+      <div id="solarContent" class="hidden">
+        <div class="card-solar">
+          <center><h2>Energia Solar Residencial</h2></center>
+          <p>
+            Transforme a luz do sol em eletricidade limpa e reduza sua conta de luz em até <strong>90%</strong>.
+            Com baixa manutenção e vida útil de mais de 20 anos, os painéis solares são uma escolha inteligente
+            para economizar e cuidar do planeta ao mesmo tempo.
+          </p>
+          <ul>
+            <li>🔋 Geração própria de energia</li>
+            <li>💸 Economia significativa a longo prazo</li>
+            <li>🌱 Menos impacto ambiental</li>
+          </ul>
+        </div>
+
+        <label for="numPaineis">Número de painéis solares:</label>
+        <input type="number" id="numPaineis" min="1" value="6" />
+        
+        <label for="gastoMensal">Quanto você gasta por mês com energia (R$)?</label>
+        <input type="number" id="gastoMensal" min="0" step="0.01" value="300" />
+        
+        <button onclick="simular()">Simular</button>
+
+        <div id="resultado"></div>
+      </div>
+
+      <!-- Conteúdo Água -->
+      <div id="aguaContent" class="hidden">
+        <div class="card-agua">
+          <center><h2>Captação de Água da Chuva</h2></center>
+          <p>
+            Aproveite a água da chuva para reduzir o consumo de água potável e ajudar o meio ambiente.
+            Com um sistema simples, você pode armazenar e utilizar essa água para diversas finalidades,
+            como irrigação, limpeza e descarga sanitária.
+          </p>
+          <ul>
+            <li>🚰 Redução no consumo de água</li>
+            <li>💸 Economia na conta mensal</li>
+            <li>🌎 Uso sustentável dos recursos naturais</li>
+          </ul>
+        </div>
+        <p>💰 Custo de implantação: R$ 2.000 a R$ 3.000</p>
+        <p>💧 Economia estimada por mês: R$ 56,10</p>
+        <p>⏳ Tempo estimado de retorno do investimento:</p>
+        <p>R$ 2.000 → aproximadamente 3 anos e 1 mês</p>
+        <p>R$ 3.000 → aproximadamente 4 anos e 6 meses</p>
+        <div style="background: #f1f9f1; padding: 12px; margin-top: 12px; border-left: 4px solid #4caf50; border-radius: 6px; color: #2e7d32;">
+          ♻️ <strong>Impacto ambiental:</strong>
+          Ao aproveitar a água da chuva, você contribui para a redução do consumo de água potável, aliviando o sistema público e ajudando a preservar os recursos hídricos do planeta.
+        </div>
+        <div style="font-size: 13px; color: #555;">* Os valores podem variar conforme região, hábitos e sistema instalado.</div>
+      </div>
+
+      <!-- Conteúdo Lixo -->
+<div id="lixoContent" class="hidden">
+  <div class="card-lixo">
+    <center><h2>Gestão de Resíduos e Reciclagem</h2></center>
+    <p>
+      Organize a coleta seletiva em sua casa para reduzir a quantidade de lixo destinado a aterros sanitários.  
+      Separar corretamente os resíduos recicláveis contribui para a preservação do meio ambiente e a economia de recursos naturais.
+    </p>
+    <ul>
+      <li>🗑️ Redução do volume de lixo enviado para aterros</li>
+      <li>♻️ Reutilização de materiais e economia de energia</li>
+      <li>🌱 Preservação dos recursos naturais e do solo</li>
+    </ul>
+  </div>
+  <p>💰 Custo estimado para implantação: R$ 300 a R$ 800</p>
+  <p>📉 Economia estimada na gestão de resíduos: redução de até 40% do volume de lixo comum</p>
+  <div style="background: #fff3e0; padding: 14px; margin-top: 16px; border-left: 5px solid #ef6c00; border-radius: 7px; color: #e65100; font-size: 14px; line-height: 1.4;">
+    ♻️ <strong>Impacto ambiental:</strong>  
+    A separação e destinação correta dos resíduos ajuda a diminuir a poluição, evita a contaminação do solo e da água.
+  </div>
+  <div style="font-size: 13px; color: #555; margin-top: 10px;">
+    * Os valores e estimativas podem variar conforme a região, a quantidade de resíduos e o sistema adotado.
+  </div>
+</div>
+
+
+    </div>
+  </div>
+
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script>
+
+    
+  const btnMudancas = document.getElementById("btnMudancas");
+  const mudancasMenu = document.getElementById("mudancasMenu");
+
+  btnMudancas.addEventListener("click", () => {
+    mudancasMenu.classList.toggle("open");
+  });
+
+
+
+
+
+  function calcularEconomia(numPaineis, gastoMensal) {
+    const producaoPorPainel = 30; // kWh/mês por painel
+    const tarifaEnergia = 0.92; // R$ por kWh
+    const investimentoPorPainel = 2500; // R$ por painel
+
+    const energiaTotal = numPaineis * producaoPorPainel; // kWh/mês
+    const consumoKwhMensal = gastoMensal / tarifaEnergia;
+    const energiaEconomizada = Math.min(energiaTotal, consumoKwhMensal);
+    const economiaMensal = energiaEconomizada * tarifaEnergia;
+    const custoTotal = numPaineis * investimentoPorPainel;
+    const retornoInvestimentoMeses = custoTotal / economiaMensal;
+
+    return {
+      energiaTotal,
+      economiaMensal,
+      custoTotal,
+      retornoInvestimentoMeses: retornoInvestimentoMeses.toFixed(1),
+      consumoKwhMensal,
+      energiaEconomizada,
+    };
+  }
+function simular() {
+  const numPaineis = parseInt(document.getElementById("numPaineis").value);
+  const gastoMensal = parseFloat(document.getElementById("gastoMensal").value);
+
+  if (isNaN(numPaineis) || numPaineis <= 0) {
+    alert("Informe um número válido de painéis (maior que zero).");
+    return;
+  }
+  if (isNaN(gastoMensal) || gastoMensal < 0) {
+    alert("Informe um gasto mensal válido (zero ou mais).");
+    return;
+  }
+
+  const resultado = calcularEconomia(numPaineis, gastoMensal);
+
+  const meses = parseFloat(resultado.retornoInvestimentoMeses);
+  const anos = Math.floor(meses / 12);
+  const mesesRestantes = Math.round(meses % 12);
+  const percentualEconomia = gastoMensal > 0 ? (resultado.economiaMensal / gastoMensal) * 100 : 0;
+
+const destaqueEstilo = "background: #fff3cd; padding: 10px; border-radius: 6px; border-left: 4px solid #ffc107; margin-bottom: 8px;";
+
+let geracaoDestaque = `<p>🔋 Energia total gerada: <strong>${resultado.energiaTotal.toFixed(1)} kWh/mês</strong></p>`;
+let aproveitamentoDestaque = `<p>💡 Energia aproveitada para economia: <strong>${resultado.energiaEconomizada.toFixed(1)} kWh/mês</strong></p>`;
+let alertaExcedente = "";
+
+if (resultado.energiaTotal > resultado.energiaEconomizada + 5) {
+  geracaoDestaque = `<div style="${destaqueEstilo}">⚠️ <strong>Energia total gerada:</strong> ${resultado.energiaTotal.toFixed(1)} kWh/mês</div>`;
+  aproveitamentoDestaque = `<div style="${destaqueEstilo}">⚠️ <strong>Energia aproveitada para economia:</strong> ${resultado.energiaEconomizada.toFixed(1)} kWh/mês</div>`;
+  alertaExcedente = `
+    <div style="background: #ffeeba; color: #856404; padding: 10px; border-radius: 6px; font-size: 14px;">
+      ⚠️ <strong>Atenção:</strong> Sua geração excede seu consumo mensal.
+O excedente é injetado na rede e pode gerar créditos, mas a compensação depende das regras da concessionária local (conforme a Lei 14.300/22). Isso pode impactar o retorno do seu investimento.
+    </div>
+  `;
+}
+
+document.getElementById("resultado").innerHTML = `
+  ${geracaoDestaque}
+  <p>⚡ Seu consumo mensal estimado: <strong>${resultado.consumoKwhMensal.toFixed(1)} kWh</strong></p>
+  ${aproveitamentoDestaque}
+  <p>💸 Economia mensal estimada: <strong>R$ ${resultado.economiaMensal.toFixed(2)}</strong> (${((resultado.economiaMensal / gastoMensal) * 100).toFixed(1)}%)</p>
+  <p>🏡 Custo total da instalação: <strong>R$ ${resultado.custoTotal.toFixed(2)}</strong></p>
+  <p>⏳ Retorno do investimento aproximado: <strong>${anos} ano(s) e ${mesesRestantes} mês(es)</strong> <span title="Os valores são estimativas médias e podem variar de acordo com sua região, inclinação do telhado, sombreamento e regulamentações locais." style="cursor: help; color: #888;">ℹ️</span></p>
+  ${alertaExcedente}
+    <div style="background: #f1f9f1; padding: 12px; margin-top: 12px; border-left: 4px solid #4caf50; border-radius: 6px; color: #2e7d32;">
+      ♻️ <strong>Impacto ambiental:</strong> Ao gerar sua própria energia limpa, você reduz a emissão de gases do efeito estufa e contribui para um planeta mais sustentável.
+    </div>
+`;
+
+  document.getElementById("resultado").innerHTML = html;
+}
+
+const btnPainel = document.getElementById("btnPainel");
+const solarContent = document.getElementById("solarContent");
+
+btnPainel.addEventListener("click", () => {
+  solarContent.classList.toggle("hidden");
+
+  // Opcional: mudar estilo do botão para indicar ativado/desativado
+  btnPainel.style.backgroundColor = solarContent.classList.contains("hidden") ? "#57c293" : "#3a7d4f";
+});
+
+
+
+    const btnTecnologias = document.getElementById("btnTecnologias");
+    const techMenu = document.getElementById("techMenu");
+
+    btnTecnologias.addEventListener("click", () => {
+      techMenu.classList.toggle("open");
+    });
+
+    const canvas = document.getElementById("renderCanvas");
+    const btnTelaCheia = document.getElementById("btnTelaCheia");
+    const fullscreenContainer = document.getElementById("fullscreenContainer");
+
+    btnTelaCheia.addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        fullscreenContainer.requestFullscreen().catch(err => {
+          alert(`Erro ao entrar em tela cheia: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    });
+
+    const divider = document.getElementById("divider");
+    const interfaceDiv = document.querySelector(".interface");
+
+    let isDragging = false;
+
+    divider.addEventListener('mousedown', () => {
+      isDragging = true;
+      document.body.style.userSelect = 'none';
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+      document.body.style.userSelect = 'auto';
+    });
+
+window.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+
+  const minWidth = 100;
+  const maxWidth = window.innerWidth - minWidth;
+  let newWidth = e.clientX;
+
+  if (newWidth < minWidth) newWidth = minWidth;
+  if (newWidth > maxWidth) newWidth = maxWidth;
+
+  const interfaceWidth = window.innerWidth - newWidth - divider.offsetWidth;
+
+  if (interfaceWidth < window.innerWidth * 0.1) {
+    // Interface sumida, canvas ocupa 99%
+    interfaceDiv.style.display = 'none';
+    divider.style.width = '1%';
+    divider.style.cursor = 'ew-resize';
+    canvas.style.width = '99%';
+  } else {
+    // Interface visível
+    interfaceDiv.style.display = 'block';
+    divider.style.width = '8px'; // voltar ao normal
+    divider.style.cursor = 'ew-resize';
+    canvas.style.width = newWidth + 'px';
+    interfaceDiv.style.width = interfaceWidth + 'px';
+  }
+
+  engine.resize();
+});
+
+
+
+
+
+    const engine = new BABYLON.Engine(canvas, true);
+    let rainOn = false;
+    let particleSystem;
+    let tank, water, faucetBase, faucetNozzle, calha1, calha2, calhaFrontal, canoComFiltro;
+    let jardineiro, wateringCan, plants = [];
+    let tanquePlantasAtivos = false;
+    let state = "resting";        // estado do jardineiro
+    let timer = 0;                 // temporizador para estados
+    let speed_j = 0.05;            // velocidade do jardineiro
+    let waterLevel = 1.0;          // nível da água no tanque
+    let targetPlantIndex = 0;      // planta que o jardineiro está regando
+    let wateringParticles;         // sistema de partículas para rega
+    let trashBins = []; // aqui vamos guardar as meshes das lixeiras
+    const todasAsArvores = [];
+    let postes = [];
+    let painel;
+    let painelAtivo = false;
+
+
+
+
+    
+    const createWindow = (name, scene, position) => {
+      const frameThickness = 0.1;
+      const frameHeight = 1.2;
+      const frameWidth = 1.2;
+
+      const frameMat = new BABYLON.StandardMaterial("frameMat", scene);
+      frameMat.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+
+      const topFrame = BABYLON.MeshBuilder.CreateBox(name + "_topFrame", {
+        width: frameWidth + frameThickness * 2,
+        height: frameThickness,
+        depth: frameThickness
+      }, scene);
+      topFrame.position = new BABYLON.Vector3(position.x, position.y + frameHeight / 2 - frameThickness / 2, position.z);
+
+      const bottomFrame = topFrame.clone(name + "_bottomFrame");
+      bottomFrame.position.y = position.y - frameHeight / 2 + frameThickness / 2;
+
+      const leftFrame = BABYLON.MeshBuilder.CreateBox(name + "_leftFrame", {
+        width: frameThickness,
+        height: frameHeight,
+        depth: frameThickness
+      }, scene);
+      leftFrame.position = new BABYLON.Vector3(position.x - frameWidth / 2 - frameThickness / 2, position.y, position.z);
+
+      const rightFrame = leftFrame.clone(name + "_rightFrame");
+      rightFrame.position.x = position.x + frameWidth / 2 + frameThickness / 2;
+
+      [topFrame, bottomFrame, leftFrame, rightFrame].forEach(f => f.material = frameMat);
+
+      const glassMat = new BABYLON.StandardMaterial(name + "_glassMat", scene);
+      glassMat.diffuseColor = new BABYLON.Color3(0.6, 0.8, 1);
+      glassMat.alpha = 0.4;
+
+      const glassWidth = (frameWidth - frameThickness * 3) / 2;
+      const glassHeight = frameHeight - frameThickness * 2;
+      const glassDepth = 0.05;
+
+      const glass1 = BABYLON.MeshBuilder.CreateBox(name + "_glass1", {
+        width: glassWidth,
+        height: glassHeight,
+        depth: glassDepth
+      }, scene);
+      glass1.position = new BABYLON.Vector3(position.x - glassWidth / 2 - frameThickness / 2, position.y, position.z);
+      glass1.material = glassMat;
+
+      const glass2 = glass1.clone(name + "_glass2");
+      glass2.position.x = position.x + glassWidth / 2 + frameThickness / 2;
+
+      const windowMesh = new BABYLON.TransformNode(name + "_window", scene);
+      [topFrame, bottomFrame, leftFrame, rightFrame, glass1, glass2].forEach(m => m.parent = windowMesh);
+
+      return windowMesh;
+    };
+
+    const createScene = () => {
+      const scene = new BABYLON.Scene(engine);
+      scene.clearColor = new BABYLON.Color3.FromHexString("#a3d4f7");
+
+      const camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2.5, Math.PI / 2.6, 37, new BABYLON.Vector3(0, 1.5, 0), scene);
+      camera.attachControl(canvas, true);
+
+      // new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+
+       // Casa retangular
+      const houseMat = new BABYLON.StandardMaterial("houseMat", scene);
+      houseMat.diffuseTexture = new BABYLON.Texture("textures/parede.jpg", scene);
+
+      const walls = BABYLON.MeshBuilder.CreateBox("walls", { width: 8, depth: 5, height: 3 }, scene);
+      walls.position.y = 1.5;
+      walls.position.x = 0;
+      walls.position.z = 10;
+      walls.material = houseMat;
+
+      // Telhado /\ no eixo Z
+      const roofMat = new BABYLON.StandardMaterial("roofMat", scene);
+      roofMat.diffuseTexture = new BABYLON.Texture("textures/telhado.jpg", scene);
+
+      const roof1 = BABYLON.MeshBuilder.CreateBox("roof1", { width: 8.2, height: 0.2, depth: 4 }, scene);
+      roof1.rotation.x = -Math.PI / 4;
+      roof1.position.y = 4.5;
+      roof1.position.z = 8.6;
+      roof1.material = roofMat;
+
+      const roof2 = roof1.clone("roof2");
+      roof2.rotation.x = Math.PI / 4;
+      roof2.position.z = 11.3;
+
+      // Parede triangular lateral (frontão) usando mesh customizado
+      const createTriangularWall = (name, posX) => {
+        const customMesh = new BABYLON.Mesh(name, scene);
+        const vertexData = new BABYLON.VertexData();
+
+        vertexData.positions = [
+          0, 2.9, 0,      // topo
+          -2.7, 0, 0,     // base esquerda
+          2.7, 0, 0       // base direita
+        ];
+
+        vertexData.indices = [0, 1, 2];
+
+        vertexData.applyToMesh(customMesh, true);
+        customMesh.position = new BABYLON.Vector3(posX, 3, 10);
+        customMesh.rotation.y = Math.PI / 2;
+        customMesh.material = houseMat;
+        customMesh.material.backFaceCulling = false;
+        return customMesh;
+      };
+
+      createTriangularWall("leftWall", -4);
+      createTriangularWall("rightWall", 4);
+
+      // Porta
+      const doorMat = new BABYLON.StandardMaterial("doorMat", scene);
+      doorMat.diffuseTexture = new BABYLON.Texture("textures/porta.jpg", scene);
+
+      const door = BABYLON.MeshBuilder.CreateBox("door", { width: 1, height: 2, depth: 0.1 }, scene);
+      door.position.set(0, 1, 7.53);
+      door.material = doorMat;
+
+      // Janelas realistas
+      createWindow("janelaE", scene, new BABYLON.Vector3(-2.5, 1.8, 7.53));
+      createWindow("janelaD", scene, new BABYLON.Vector3(2.5, 1.8, 7.53));
+
+      // --- Garagem ---
+      // Colunas
+      const colunaMat = new BABYLON.StandardMaterial("colunaMat", scene);
+      colunaMat.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+
+      const coluna1 = BABYLON.MeshBuilder.CreateBox("coluna1", {width: 0.3, height: 2.77, depth: 0.3}, scene);
+      coluna1.position = new BABYLON.Vector3(-7, 1, 12);
+      coluna1.material = colunaMat;
+
+      const coluna2 = coluna1.clone("coluna2");
+      coluna2.position.x = -7;
+      coluna2.position.z = 8.4;
+
+      // Telhado escorregado da garagem
+      const telhadoGaragem = BABYLON.MeshBuilder.CreateBox("telhadoGaragem", {width: 4, height: 0.2, depth: 5}, scene);
+      telhadoGaragem.position = new BABYLON.Vector3(-5, 3, 10.2);
+      telhadoGaragem.rotation.x = -Math.PI / 12;
+      telhadoGaragem.rotation.y = Math.PI / 2;
+      telhadoGaragem.material = roofMat;
+
+      // Piso garagem (opcional)
+      const pisoGaragem = BABYLON.MeshBuilder.CreateGround("pisoGaragem", {width: 3, height: 21.4}, scene);
+      pisoGaragem.position = new BABYLON.Vector3(-5.5, 0.01, 1.9);
+      const pisoMat = new BABYLON.StandardMaterial("pisoMat", scene);
+      pisoMat.diffuseColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+      pisoGaragem.material = pisoMat;
+      
+      // --- Carro simples ---
+      const carro = new BABYLON.TransformNode("carro", scene);
+
+      // Corpo principal
+      const corpo = BABYLON.MeshBuilder.CreateBox("corpo", {
+        width: 1.6,
+        height: 0.5,
+        depth: 3
+      }, scene);
+      corpo.position = new BABYLON.Vector3(-5.5, 0.55, 10);
+      corpo.parent = carro;
+
+      // Parte superior (teto)
+      const teto = BABYLON.MeshBuilder.CreateBox("teto", {
+        width: 1.2,
+        height: 0.4,
+        depth: 1.6
+      }, scene);
+      teto.position = new BABYLON.Vector3(-5.5, 1.0, 10);
+      teto.parent = carro;
+
+      // Rodas
+      const rodaMat = new BABYLON.StandardMaterial("rodaMat", scene);
+      rodaMat.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+
+      const criarRoda = (x, z) => {
+        const roda = BABYLON.MeshBuilder.CreateCylinder("roda", {
+          diameter: 0.5,
+          height: 0.2
+        }, scene);
+        roda.rotation.z = Math.PI / 2;
+        roda.position = new BABYLON.Vector3(x, 0.25, z);
+        roda.material = rodaMat;
+        roda.parent = carro;
+      };
+
+      criarRoda(-6.3, 11);
+      criarRoda(-4.7, 11);
+      criarRoda(-6.3, 9);
+      criarRoda(-4.7, 9);
+
+      // Material do carro
+      const carroMat = new BABYLON.StandardMaterial("carroMat", scene);
+      carroMat.diffuseColor = new BABYLON.Color3(0.2, 0.4, 1); // Azul
+      corpo.material = carroMat;
+      teto.material = carroMat;
+
+
+                 // --- Quintal da frente ---
+
+      // Caminho de pedras até a porta
+      const pedraMat = new BABYLON.StandardMaterial("pedraMat", scene);
+      pedraMat.diffuseTexture = new BABYLON.Texture("textures/pedra.jpg", scene);
+
+      for (let i = 0; i < 11; i++) {
+        const pedra = BABYLON.MeshBuilder.CreateBox("pedra" + i, {
+          width: 1,
+          height: 0.2,
+          depth: 1
+        }, scene);
+        pedra.position = new BABYLON.Vector3(0, 0.025, 7 - i * 1.5);
+        pedra.material = pedraMat;
+      }
+
+      // Área gramada da frente (um plano verde mais escuro)
+      const quintalFrente = BABYLON.MeshBuilder.CreateGround("quintalFrente", {
+        width: 24,
+        height: 28.8
+      }, scene);
+      quintalFrente.position.z = 5.6;
+      quintalFrente.position.y = 0.01;
+      quintalFrente.position.x = 8;
+
+      const gramaFrenteMat = new BABYLON.StandardMaterial("gramaFrenteMat", scene);
+      gramaFrenteMat.diffuseTexture = new BABYLON.Texture("textures/grama2.jpg", scene);
+      quintalFrente.material = gramaFrenteMat;
+
+      // Calçada em frente à casa
+      const calcada = BABYLON.MeshBuilder.CreateGround("calcada", {
+        width: 40,
+        height: 2
+      }, scene);
+      calcada.position = new BABYLON.Vector3(0, 0.02, -9.8); // Entre rua e quintal
+
+      const calcadaMat = new BABYLON.StandardMaterial("calcadaMat", scene);
+      calcadaMat.diffuseTexture = new BABYLON.Texture("textures/calcada.jpg", scene); // Use sua textura local
+      calcadaMat.diffuseTexture.uScale = 4;
+      calcadaMat.diffuseTexture.vScale = 1;
+      calcada.material = calcadaMat;
+
+      // Clone da calçada (do outro lado da rua)
+      const calcada2 = calcada.clone("calcada2");
+      calcada2.position.z = -15.8; // Ajuste a posição para colocá-la atrás da rua
+
+
+      // Rua em frente à casa
+      const rua = BABYLON.MeshBuilder.CreateGround("rua", {
+        width: 40,
+        height: 4
+      }, scene);
+      rua.position = new BABYLON.Vector3(0, 0.01, -12.8); // Levemente acima do terreno
+
+      const ruaMat = new BABYLON.StandardMaterial("ruaMat", scene);
+      ruaMat.diffuseTexture = new BABYLON.Texture("textures/asfalto.jpg", scene); // Substitua com o caminho certo
+      ruaMat.diffuseTexture.uScale = 4;
+      ruaMat.diffuseTexture.vScale = 1;
+      rua.material = ruaMat;
+
+      
+// --- Material do cachorro ---
+const dogMaterial = new BABYLON.StandardMaterial("dogMat", scene);
+dogMaterial.diffuseTexture = new BABYLON.Texture("textures/cachorro.jpg", scene);
+
+// Corpo
+const body = BABYLON.MeshBuilder.CreateBox("dogBody", { width: 0.6, height: 0.4, depth: 1 }, scene);
+body.material = dogMaterial;
+body.position = new BABYLON.Vector3(-0.2, 0.2, 0.3);
+
+// Cabeça
+const head = BABYLON.MeshBuilder.CreateBox("dogHead", { width: 0.4, height: 0.4, depth: 0.4 }, scene);
+head.position.y = 0.25;
+head.position.z = 0.7;
+head.material = dogMaterial;
+
+// Orelhas
+const earMat = new BABYLON.StandardMaterial("earMat", scene);
+earMat.diffuseColor = new BABYLON.Color3(0.15, 0.07, 0);
+
+const leftEar = BABYLON.MeshBuilder.CreateCylinder("leftEar", {
+  diameterTop: 0,
+  diameterBottom: 0.1,
+  height: 0.3,
+  tessellation: 3
+}, scene);
+leftEar.material = earMat;
+leftEar.position = new BABYLON.Vector3(-0.15, 0.5, 0.55);
+leftEar.rotation.z = Math.PI / 6;
+
+const rightEar = leftEar.clone("rightEar");
+rightEar.position.x = 0.15;
+rightEar.rotation.z = -Math.PI / 6;
+
+// Olhos
+const eyeWhiteMat = new BABYLON.StandardMaterial("eyeWhiteMat", scene);
+eyeWhiteMat.diffuseColor = new BABYLON.Color3(1, 1, 1);
+
+const pupilMat = new BABYLON.StandardMaterial("pupilMat", scene);
+pupilMat.diffuseColor = new BABYLON.Color3(0, 0, 0);
+
+const leftEyeWhite = BABYLON.MeshBuilder.CreateSphere("leftEyeWhite", { diameter: 0.1 }, scene);
+leftEyeWhite.material = eyeWhiteMat;
+leftEyeWhite.position = new BABYLON.Vector3(-0.12, 0.3, 0.85);
+
+const rightEyeWhite = leftEyeWhite.clone("rightEyeWhite");
+rightEyeWhite.position.x = 0.12;
+
+const leftPupil = BABYLON.MeshBuilder.CreateSphere("leftPupil", { diameter: 0.05 }, scene);
+leftPupil.material = pupilMat;
+leftPupil.position = new BABYLON.Vector3(-0.12, 0.3, 0.9);
+
+const rightPupil = leftPupil.clone("rightPupil");
+rightPupil.position.x = 0.12;
+
+// Pernas (4 cubos finos)
+const legWidth = 0.12;
+const legHeight = 0.4;
+const legDepth = 0.12;
+
+const frontLeftLeg = BABYLON.MeshBuilder.CreateBox("frontLeftLeg", { width: legWidth, height: legHeight, depth: legDepth }, scene);
+frontLeftLeg.position = new BABYLON.Vector3(-0.2, -0.2, 0.3);
+frontLeftLeg.material = dogMaterial;
+
+const frontRightLeg = frontLeftLeg.clone("frontRightLeg");
+frontRightLeg.position.x = 0.2;
+
+const backLeftLeg = frontLeftLeg.clone("backLeftLeg");
+backLeftLeg.position.z = -0.3;
+
+const backRightLeg = frontLeftLeg.clone("backRightLeg");
+backRightLeg.position.x = 0.2;
+backRightLeg.position.z = -0.3;
+
+// --- Cauda ---
+const tail = BABYLON.MeshBuilder.CreateBox("tail", { width: 0.1, height: 0.1, depth: 0.3 }, scene);
+tail.material = dogMaterial;
+tail.position = new BABYLON.Vector3(0, 0.28, -0.6); // levemente elevada e atrás
+tail.rotation.x = Math.PI / 6; // inclinação para cima
+tail.parent = body;
+
+
+// Agrupar cabeça e acessórios
+const headGroup = new BABYLON.TransformNode("headGroup", scene);
+head.parent = headGroup;
+leftEar.parent = headGroup;
+rightEar.parent = headGroup;
+leftEyeWhite.parent = headGroup;
+rightEyeWhite.parent = headGroup;
+leftPupil.parent = headGroup;
+rightPupil.parent = headGroup;
+
+// A cabeça (com orelhas e olhos) é filha do corpo
+headGroup.parent = body;
+
+// Pernas também filhas do corpo
+frontLeftLeg.parent = body;
+frontRightLeg.parent = body;
+backLeftLeg.parent = body;
+backRightLeg.parent = body;
+
+// Grupo principal do cachorro
+const dog = new BABYLON.TransformNode("dog", scene);
+body.parent = dog;
+
+// Posição inicial
+dog.position = new BABYLON.Vector3(0, 0.2, -4);
+
+// --- Movimento aleatório do cachorro corrigido ---
+let dogTarget = null;
+let waitTime = 0;
+const speed = 0.02;
+const rotationSpeed = 0.05;
+
+scene.onBeforeRenderObservable.add(() => {
+  if (!dogTarget && waitTime <= 0) {
+    const minX = -3.5;
+    const maxX = 10;
+    const minZ = -8;
+    const maxZ = -3.5;
+    const newX = Math.random() * (maxX - minX) + minX;
+    const newZ = Math.random() * (maxZ - minZ) + minZ;
+    dogTarget = new BABYLON.Vector3(newX, dog.position.y, newZ);
+  }
+
+  if (dogTarget) {
+    const direction = dogTarget.subtract(dog.position);
+    const distance = direction.length();
+
+    if (distance < 0.1) {
+      dogTarget = null;
+      waitTime = 100 + Math.random() * 200;
+    } else {
+      const desiredRotation = Math.atan2(direction.x, direction.z);
+      let currentRotation = dog.rotation.y;
+      let delta = desiredRotation - currentRotation;
+
+      if (delta > Math.PI) delta -= 2 * Math.PI;
+      if (delta < -Math.PI) delta += 2 * Math.PI;
+
+      if (Math.abs(delta) > rotationSpeed) {
+        dog.rotation.y += rotationSpeed * Math.sign(delta);
+      } else {
+        dog.rotation.y = desiredRotation;
+      }
+
+      if (Math.abs(delta) < 0.1) {
+        const moveVector = new BABYLON.Vector3(
+          Math.sin(dog.rotation.y) * speed,
+          0,
+          Math.cos(dog.rotation.y) * speed
+        );
+        dog.position.addInPlace(moveVector);
+      }
+    }
+  } else {
+    if (waitTime > 0) waitTime--;
+  }
+});
+
+function createPerson(scene, position, facingRight = true) {
+  const person = new BABYLON.TransformNode("person", scene);
+
+  // Cabeça
+  const head = BABYLON.MeshBuilder.CreateSphere("head", { diameter: 0.3 }, scene);
+  head.position.y = 1.6;
+  head.parent = person;
+
+  const headMat = new BABYLON.StandardMaterial("headMat", scene);
+  headMat.diffuseColor = new BABYLON.Color3(
+    Math.random() * 0.4 + 0.6,
+    Math.random() * 0.4 + 0.4,
+    Math.random() * 0.3 + 0.2
+  );
+  head.material = headMat;
+
+  // Corpo
+  const body = BABYLON.MeshBuilder.CreateBox("body", { width: 0.4, height: 0.7, depth: 0.25 }, scene);
+  body.position.y = 1.1;
+  body.parent = person;
+
+  const bodyMat = new BABYLON.StandardMaterial("bodyMat", scene);
+  bodyMat.diffuseColor = BABYLON.Color3.Random();
+  body.material = bodyMat;
+
+  // Pernas
+  const leftLeg = BABYLON.MeshBuilder.CreateBox("leftLeg", { height: 0.5, width: 0.15, depth: 0.15 }, scene);
+  leftLeg.position.y = 0.25;
+  leftLeg.position.x = -0.1;
+  leftLeg.parent = person;
+
+  const rightLeg = leftLeg.clone("rightLeg");
+  rightLeg.position.x = 0.1;
+
+  const legMat = new BABYLON.StandardMaterial("legMat", scene);
+  legMat.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+  leftLeg.material = legMat;
+  rightLeg.material = legMat;
+
+  // Braços
+  const leftArm = BABYLON.MeshBuilder.CreateBox("leftArm", { height: 0.5, width: 0.12, depth: 0.12 }, scene);
+  leftArm.position.y = 1.1;
+  leftArm.position.x = -0.3;
+  leftArm.parent = person;
+
+  const rightArm = leftArm.clone("rightArm");
+  rightArm.position.x = 0.3;
+
+  const armMat = new BABYLON.StandardMaterial("armMat", scene);
+  armMat.diffuseColor = headMat.diffuseColor;
+  leftArm.material = armMat;
+  rightArm.material = armMat;
+
+  // Cabelo
+  const hair = BABYLON.MeshBuilder.CreateSphere("hair", { diameter: 0.32, slice: 0.5 }, scene);
+  hair.position.y = 1.68;
+  hair.parent = person;
+
+  const hairMat = new BABYLON.StandardMaterial("hairMat", scene);
+  hairMat.diffuseColor = new BABYLON.Color3(
+    Math.random() * 0.3,
+    Math.random() * 0.2,
+    Math.random() * 0.1
+  );
+  hair.material = hairMat;
+
+  // Chapéu (aparece com 50% de chance)
+  if (Math.random() < 0.5) {
+    const hatBrim = BABYLON.MeshBuilder.CreateCylinder("hatBrim", { diameter: 0.5, height: 0.05 }, scene);
+    hatBrim.position.y = 1.78;
+    hatBrim.parent = person;
+
+    const hatTop = BABYLON.MeshBuilder.CreateCylinder("hatTop", { diameter: 0.3, height: 0.3 }, scene);
+    hatTop.position.y = 1.95;
+    hatTop.parent = person;
+
+    const hatMat = new BABYLON.StandardMaterial("hatMat", scene);
+    hatMat.diffuseColor = new BABYLON.Color3(0.2, 0.1, 0.05);
+    hatBrim.material = hatMat;
+    hatTop.material = hatMat;
+  }
+
+  // Mochila (aparece com 50% de chance)
+  if (Math.random() < 0.5) {
+    const backpack = BABYLON.MeshBuilder.CreateBox("backpack", { width: 0.25, height: 0.4, depth: 0.15 }, scene);
+    backpack.position.y = 1.1;
+    backpack.position.z = -0.2;
+    backpack.parent = person;
+
+    const backpackMat = new BABYLON.StandardMaterial("backpackMat", scene);
+    backpackMat.diffuseColor = BABYLON.Color3.Random();
+    backpack.material = backpackMat;
+  }
+
+  // Posição inicial
+  person.position = position;
+
+  // Ajustar rotação de acordo com direção
+  person.rotation.y = facingRight ? Math.PI / 2 : -Math.PI / 2;
+
+  // Animação de andar (braços e pernas)
+  let walkTime = 0;
+  scene.onBeforeRenderObservable.add(() => {
+    walkTime += 0.1;
+    const armSwing = Math.sin(walkTime) * 0.4;
+    const legSwing = Math.sin(walkTime) * 0.4;
+
+    leftArm.rotation.x = armSwing;
+    rightArm.rotation.x = -armSwing;
+    leftLeg.rotation.x = -legSwing;
+    rightLeg.rotation.x = legSwing;
+  });
+
+  return person;
+}
+
+
+function createPeopleGroup(scene, count, startX, endX, zPos, speed, goingRight) {
+  const people = [];
+  const maxPeople = count;
+
+  // Estado para controle de surgimento
+  let timers = new Array(maxPeople).fill(0);
+  let enabledFlags = new Array(maxPeople).fill(false);
+  const peoplePositions = [];
+
+  for (let i = 0; i < maxPeople; i++) {
+    const pos = new BABYLON.Vector3(
+      goingRight ? startX - i * 2 : startX + i * 2,
+      0,
+      zPos
+    );
+    peoplePositions.push(pos);
+    const p = createPerson(scene, pos, goingRight);
+    p.setEnabled(false);
+    people.push(p);
+  }
+
+  scene.onBeforeRenderObservable.add(() => {
+    for (let i = 0; i < maxPeople; i++) {
+      if (!enabledFlags[i]) {
+        // Countdown para surgir
+        timers[i]--;
+        if (timers[i] <= 0) {
+          people[i].position = peoplePositions[i].clone();
+          people[i].setEnabled(true);
+          enabledFlags[i] = true;
+        }
+      } else {
+        // Move pessoa
+        const dir = goingRight ? 1 : -1;
+        people[i].position.x += speed * dir;
+
+        // Desaparece ao sair da calçada
+        if (
+          (goingRight && people[i].position.x > endX) ||
+          (!goingRight && people[i].position.x < endX)
+        ) {
+          people[i].setEnabled(false);
+          enabledFlags[i] = false;
+          timers[i] = Math.floor(Math.random() * 300) + 100; // próximo surgimento entre ~3 a 10 segundos
+        }
+      }
+    }
+  });
+
+  return people;
+}
+
+// --- Criar duas filas na calçada ---
+const fila1 = createPeopleGroup(scene, 3, -20, 20, -9.8, 0.02, true);   // Esquerda para direita
+const fila2 = createPeopleGroup(scene, 3, 20, -20, -9.2, 0.02, false);   // Direita para esquerda
+
+
+// --- Chão ---
+const ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 40, height: 40 }, scene);
+const groundMat = new BABYLON.StandardMaterial("groundMat", scene);
+groundMat.diffuseTexture = new BABYLON.Texture("textures/grama.jpg", scene);
+ground.material = groundMat;
+
+// Luzes principais
+const hemiLight = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0, 1, 0), scene);
+hemiLight.intensity = 1;
+
+const sunLight = new BABYLON.DirectionalLight("sun", new BABYLON.Vector3(0, -1, 0), scene);
+sunLight.intensity = 0.4;
+
+const sunSphere = BABYLON.MeshBuilder.CreateSphere("sun", { diameter: 3 }, scene);
+const sunMat = new BABYLON.StandardMaterial("sunMat", scene);
+sunMat.emissiveColor = new BABYLON.Color3(1, 1, 0.4);
+sunSphere.material = sunMat;
+
+const moonSphere = BABYLON.MeshBuilder.CreateSphere("moon", { diameter: 2.5 }, scene);
+const moonMat = new BABYLON.StandardMaterial("moonMat", scene);
+moonMat.emissiveColor = new BABYLON.Color3(0.7, 0.7, 1);
+moonSphere.material = moonMat;
+
+// Ciclo dia/noite
+let hora = 20;
+let tempoRodando = true;
+
+function intensidadePostes(alturaSol) {
+  if (alturaSol < 0) return 1;
+  if (alturaSol < 0.1) return 1 - alturaSol * 10;
+  return 0;
+}
+
+scene.registerBeforeRender(() => {
+  if (tempoRodando) {
+    hora += 0.01;
+    if (hora > 24) hora = 0;
+  }
+
+  const ang = (hora / 24) * 2 * Math.PI;
+  const posSol = new BABYLON.Vector3(Math.sin(ang) * 50, Math.cos(ang) * 50, 0);
+  const posLua = posSol.negate();
+
+  sunSphere.position = posSol;
+  moonSphere.position = posLua;
+  sunLight.direction = posSol.negate().normalize();
+
+  const alturaSol = posSol.y / 50;
+
+  sunLight.intensity = Math.max(0, alturaSol) * 0.5;
+  sunSphere.isVisible = alturaSol > 0;
+  moonSphere.isVisible = alturaSol < 0;
+
+  const corDia = new BABYLON.Color3(0.6, 0.8, 1);
+  const corNoite = new BABYLON.Color3(0.15, 0.15, 0.3);
+  const t = BABYLON.Scalar.Clamp(alturaSol, 0, 1);
+  scene.clearColor = BABYLON.Color3.Lerp(corNoite, corDia, t);
+  hemiLight.intensity = 0.4 + 0.6 * t;
+  ground.material.diffuseColor = new BABYLON.Color3(0.3, 0.55, 0.3).scale(0.4 + 0.6 * t);
+
+  if (painelAtivo) {
+    const intensidade = intensidadePostes(alturaSol);
+    postes.forEach(({ lampMat, light, lamp }) => {
+      lampMat.emissiveColor = new BABYLON.Color3(intensidade, intensidade * 0.8, intensidade * 0.5);
+      light.setEnabled(intensidade > 0);
+      light.intensity = intensidade * 1.2;
+      light.position = lamp.position.clone();
+    });
+  }
+});
+
+// Botão de pausa
+const btn = document.getElementById("toggleTimeBtn");
+btn.addEventListener("click", () => {
+  tempoRodando = !tempoRodando;
+  btn.textContent = tempoRodando ? "⏱️" : "⏱️";
+});
+
+// Criar painel solar e postes
+function criarPainelEPostes(scene) {
+  painel = BABYLON.MeshBuilder.CreatePlane("painel", { width: 2.5, height: 1.5 }, scene);
+  painel.rotation.x = Math.PI / 4;
+  painel.position.set(0, 3.8, 7.7);
+
+  const painelMat = new BABYLON.StandardMaterial("painelMat", scene);
+  painelMat.diffuseTexture = new BABYLON.Texture("textures/painel.jpg", scene);
+  painel.material = painelMat;
+  painel.isVisible = false;
+
+  function criarPoste(nome, pos) {
+    const poste = BABYLON.MeshBuilder.CreateCylinder(nome + "_cyl", { height: 5, diameter: 0.25 }, scene);
+    poste.position = pos.add(new BABYLON.Vector3(0, 2.5, 0));
+
+    const lamp = BABYLON.MeshBuilder.CreateSphere(nome + "_lamp", { diameter: 0.6 }, scene);
+    lamp.position = pos.add(new BABYLON.Vector3(0, 5, 0));
+
+    const lampMat = new BABYLON.StandardMaterial(nome + "_mat", scene);
+    lampMat.emissiveColor = BABYLON.Color3.Black();
+    lamp.material = lampMat;
+
+    const light = new BABYLON.PointLight(nome + "_light", lamp.position.clone(), scene);
+    light.range = 12;
+    light.diffuse = new BABYLON.Color3(1, 0.85, 0.6);
+    light.setEnabled(false);
+
+    poste.isVisible = false;
+    lamp.isVisible = false;
+
+    return { poste, lamp, lampMat, light };
+  }
+
+  const posteA = criarPoste("posteA", new BABYLON.Vector3(8, 0, -8.6));
+  const posteB = criarPoste("posteB", new BABYLON.Vector3(-8, 0, -8.6));
+  postes = [posteA, posteB];
+}
+
+// Alternar painel e postes
+function togglePainelPostes() {
+  painelAtivo = !painelAtivo;
+
+  if (painel) painel.isVisible = painelAtivo;
+
+  postes.forEach(({ poste, lamp, lampMat, light }) => {
+    poste.isVisible = painelAtivo;
+    lamp.isVisible = painelAtivo;
+
+    if (painelAtivo) {
+      const alturaSol = sunSphere.position.y / 50;
+      const intensidade = intensidadePostes(alturaSol);
+
+      lampMat.emissiveColor = new BABYLON.Color3(intensidade, intensidade * 0.8, intensidade * 0.5);
+      light.setEnabled(intensidade > 0);
+      light.intensity = intensidade * 1.2;
+      light.position = lamp.position.clone();
+    } else {
+      lampMat.emissiveColor = BABYLON.Color3.Black();
+      light.setEnabled(false);
+      light.position = new BABYLON.Vector3(999, 999, 999);
+    }
+  });
+
+const btnPainel = document.getElementById("btnPainel");
+if (btnPainel) {
+  // Apenas muda o atributo title (tooltip), se quiser
+  btnPainel.title = painelAtivo
+    ? "Ocultar painel solar e postes"
+    : "Mostrar painel solar e postes";
+}
+
+  const economia = document.getElementById("economia");
+  const emissoes = document.getElementById("emissoes");
+  if (economia) economia.textContent = painelAtivo ? "500" : "0";
+  if (emissoes) emissoes.textContent = painelAtivo ? "150" : "0";
+}
+
+// Inicialização
+criarPainelEPostes(scene);
+document.getElementById("btnPainel").addEventListener("click", togglePainelPostes);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// === Tanque com água animada ===
+const tankHeight = 1.5;
+tank = BABYLON.MeshBuilder.CreateCylinder("tank", { height: tankHeight, diameter: 2 }, scene);
+tank.position = new BABYLON.Vector3(5, tankHeight / 2, 10);
+
+const tankMat = new BABYLON.StandardMaterial("tankMat", scene);
+tankMat.diffuseColor = new BABYLON.Color3(0.7, 0.7, 0.7);
+tankMat.alpha = 0.5;
+tank.material = tankMat;
+
+water = BABYLON.MeshBuilder.CreateCylinder("water", { height: 1, diameter: 1.8 }, scene);
+water.position = new BABYLON.Vector3(tank.position.x, 0, tank.position.z);
+
+const waterMat = new BABYLON.StandardMaterial("waterMat", scene);
+waterMat.diffuseColor = new BABYLON.Color3(0, 0.3, 0.6);
+waterMat.alpha = 0.6;
+water.material = waterMat;
+
+let waterLevel = 0.6;
+function updateWaterLevel() {
+  water.scaling.y = waterLevel;
+  water.position.y = waterLevel / 2;
+}
+updateWaterLevel();
+
+// === Torneira ===
+faucetBase = BABYLON.MeshBuilder.CreateBox("faucetBase", { width: 0.2, height: 0.5, depth: 0.2 }, scene);
+faucetBase.position = new BABYLON.Vector3(6, 0.25, 10);
+const faucetMat = new BABYLON.StandardMaterial("faucetMat", scene);
+faucetMat.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+faucetBase.material = faucetMat;
+
+faucetNozzle = BABYLON.MeshBuilder.CreateCylinder("faucetNozzle", { height: 0.15, diameter: 0.15 }, scene);
+faucetNozzle.position = new BABYLON.Vector3(6.3, 0, 10);
+faucetNozzle.rotation.z = Math.PI / 2;
+faucetNozzle.material = faucetMat;
+
+// Função que cria uma calha horizontal
+function criarCalha(posicao) {
+  const path = [new BABYLON.Vector3(-4.3, 0, 0), new BABYLON.Vector3(4.3, 0, 0)];
+  const radius = 0.15;
+  const calhaProfile = [];
+  const segments = 16;
+  for (let i = 0; i <= segments; i++) {
+    const angle = Math.PI * (i / segments);
+    const x = radius * Math.cos(angle);
+    const y = radius * Math.sin(angle);
+    calhaProfile.push(new BABYLON.Vector3(x, y, 0));
+  }
+
+  const calha = BABYLON.MeshBuilder.ExtrudeShape("calha", {
+    shape: calhaProfile,
+    path: path,
+    scale: 1,
+    sideOrientation: BABYLON.Mesh.DOUBLESIDE
+  }, scene);
+
+  calha.rotation.x = Math.PI;
+  calha.position = posicao;
+
+  const mat = new BABYLON.StandardMaterial("matCalha", scene);
+  mat.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+  mat.specularColor = new BABYLON.Color3(1, 1, 1);
+  calha.material = mat;
+
+  return calha;
+}
+
+// Função que cria uma calha frontal no eixo Z
+function criarCalhaFrontal(posicao) {
+  const path = [new BABYLON.Vector3(0, 0, -3), new BABYLON.Vector3(0, 0, 3)];
+  const radius = 0.15;
+  const calhaProfile = [];
+  const segments = 16;
+  for (let i = 0; i <= segments; i++) {
+    const angle = Math.PI * (i / segments);
+    const x = radius * Math.cos(angle);
+    const y = radius * Math.sin(angle);
+    calhaProfile.push(new BABYLON.Vector3(x, y, 0));
+  }
+
+  const calha = BABYLON.MeshBuilder.ExtrudeShape("calhaZ", {
+    shape: calhaProfile,
+    path: path,
+    scale: 1,
+    sideOrientation: BABYLON.Mesh.DOUBLESIDE
+  }, scene);
+
+  calha.rotation.x = Math.PI;
+  calha.position = posicao;
+
+  const mat = new BABYLON.StandardMaterial("matCalhaZ", scene);
+  mat.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+  mat.specularColor = new BABYLON.Color3(1, 1, 1);
+  calha.material = mat;
+
+  return calha;
+}
+
+// Função para criar cano com filtro
+function criarCanoComFiltro(posicaoBaseY, posicaoXZ) {
+  const alturaTotal = 3.1;
+  const raioCano = 0.08;
+
+  const canoSuperior = BABYLON.MeshBuilder.CreateCylinder("canoSuperior", {
+    height: alturaTotal / 2 - 0.2,
+    diameter: raioCano * 2
+  }, scene);
+  canoSuperior.position = new BABYLON.Vector3(posicaoXZ.x, posicaoBaseY + alturaTotal - (alturaTotal / 4), posicaoXZ.z);
+
+  const canoInferior = BABYLON.MeshBuilder.CreateCylinder("canoInferior", {
+    height: alturaTotal / 2 - 0.2,
+    diameter: raioCano * 2
+  }, scene);
+  canoInferior.position = new BABYLON.Vector3(posicaoXZ.x, posicaoBaseY + (alturaTotal / 4), posicaoXZ.z);
+
+  const filtro = BABYLON.MeshBuilder.CreateCylinder("filtro", {
+    height: 0.4,
+    diameter: raioCano * 2.5
+  }, scene);
+  filtro.position = new BABYLON.Vector3(posicaoXZ.x, posicaoBaseY + alturaTotal / 2, posicaoXZ.z);
+
+  const matCano = new BABYLON.StandardMaterial("matCano", scene);
+  matCano.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+  canoSuperior.material = matCano;
+  canoInferior.material = matCano;
+
+  const matFiltro = new BABYLON.StandardMaterial("matFiltro", scene);
+  matFiltro.diffuseColor = new BABYLON.Color3(0.2, 0.5, 0.2);
+  filtro.material = matFiltro;
+
+  return BABYLON.Mesh.MergeMeshes([canoSuperior, canoInferior, filtro], true);
+}
+
+// Criar calhas e cano
+calha1 = criarCalha(new BABYLON.Vector3(0, 3.1, 12.9));
+calha2 = criarCalha(new BABYLON.Vector3(0, 3.1, 7));
+calhaFrontal = criarCalhaFrontal(new BABYLON.Vector3(4.18, 3.1, 10));
+canoComFiltro = criarCanoComFiltro(0, new BABYLON.Vector3(4.2, 3, 10));
+
+// === Jardineiro ===
+jardineiro = createPerson(scene);
+jardineiro.position = new BABYLON.Vector3(4, 0, 2);
+
+// === Regador ===
+wateringCan = BABYLON.MeshBuilder.CreateBox("wateringCan", { width: 0.3, height: 0.2, depth: 0.5 }, scene);
+wateringCan.position = new BABYLON.Vector3(0.3, 0.8, 0);
+wateringCan.rotation.x = Math.PI / 8;
+const wateringCanMat = new BABYLON.StandardMaterial("wateringCanMat", scene);
+wateringCanMat.diffuseColor = new BABYLON.Color3(0.8, 0.8, 0);
+wateringCan.material = wateringCanMat;
+wateringCan.parent = jardineiro;
+
+// === Partículas de chuva ===
+particleSystem = new BABYLON.ParticleSystem("rain", 1000, scene);
+particleSystem.particleTexture = new BABYLON.Texture("textures/raindrop.jpg", scene);
+particleSystem.emitter = new BABYLON.Vector3(0, 15, 0);
+particleSystem.minEmitBox = new BABYLON.Vector3(-23, 0, -23);
+particleSystem.maxEmitBox = new BABYLON.Vector3(23, 0, 23);
+particleSystem.color1 = new BABYLON.Color4(0.7, 0.8, 1, 1);
+particleSystem.color2 = new BABYLON.Color4(0.5, 0.6, 1, 1);
+particleSystem.minSize = 0.1;
+particleSystem.maxSize = 0.2;
+particleSystem.emitRate = 600;
+particleSystem.direction1 = particleSystem.direction2 = new BABYLON.Vector3(0, -10, 0);
+particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+particleSystem.isEmitBoxRandom = true;
+particleSystem.stop();
+
+scene.registerBeforeRender(() => {
+  if (rainOn) {
+    waterLevel = Math.min(waterLevel + 0.0015, 1.4);
+    updateWaterLevel();
+  }
+});
+
+// Movimento do jardineiro
+function moveToTarget(target) {
+  const dir = target.subtract(jardineiro.position);
+  if (dir.length() < 0.05) return true;
+  jardineiro.lookAt(new BABYLON.Vector3(target.x, jardineiro.position.y, target.z));
+  jardineiro.position.addInPlace(dir.normalize().scale(speed_j));
+  return false;
+}
+
+// === Partículas do regador ===
+wateringParticles = new BABYLON.ParticleSystem("watering", 2000, scene);
+wateringParticles.particleTexture = new BABYLON.Texture("textures/raindrop.jpg", scene);
+wateringParticles.minEmitBox = new BABYLON.Vector3(-0.1, 0, -0.1);
+wateringParticles.maxEmitBox = new BABYLON.Vector3(0.1, 0, 0.1);
+wateringParticles.color1 = new BABYLON.Color4(0.5, 0.5, 1, 1);
+wateringParticles.color2 = new BABYLON.Color4(0.5, 0.7, 1, 1);
+wateringParticles.emitRate = 300;
+wateringParticles.gravity = new BABYLON.Vector3(0, -9.81, 0);
+wateringParticles.direction1 = new BABYLON.Vector3(-0.5, -1, -0.5);
+wateringParticles.direction2 = new BABYLON.Vector3(0.5, -1, 0.5);
+wateringParticles.minSize = 0.01;
+wateringParticles.maxSize = 0.07;
+wateringParticles.minLifeTime = 0.3;
+wateringParticles.maxLifeTime = 0.6;
+wateringParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+wateringParticles.stop();
+
+// === Ciclo do jardineiro ===
+scene.onBeforeRenderObservable.add(() => {
+  switch (state) {
+    case "toFaucet":
+      if (moveToTarget(faucetNozzle.position.add(new BABYLON.Vector3(0, 0, 0.2)))) {
+        state = "filling";
+        timer = 0;
+      }
+      break;
+
+    case "filling":
+      timer += scene.getEngine().getDeltaTime();
+      if (timer > 2000) {
+        if (waterLevel > 0.2) {
+          waterLevel -= 0.2;
+          updateWaterLevel();
+          state = "toPlant";
+        } else {
+          timer = 0;
+        }
+      }
+      break;
+
+    case "toPlant":
+      if (moveToTarget(plants[targetPlantIndex].position)) {
+        state = "watering";
+        timer = 0;
+      }
+      break;
+
+    case "watering":
+      timer += scene.getEngine().getDeltaTime();
+      if (timer < 2000) {
+        if (!wateringParticles.isStarted()) {
+          wateringParticles.emitter = plants[targetPlantIndex].position.add(new BABYLON.Vector3(0.3, 0.7, -0.3));
+          wateringParticles.start();
+        }
+      } else {
+        wateringParticles.stop();
+        targetPlantIndex++;
+        if (targetPlantIndex >= plants.length) {
+          targetPlantIndex = 0;
+          state = "resting";
+          timer = 0;
+        } else {
+          state = "toPlant";
+        }
+      }
+      break;
+
+    case "resting":
+      timer += scene.getEngine().getDeltaTime();
+      if (timer > 3000) {
+        state = "toFaucet";
+      }
+      break;
+  }
+});
+
+// === Plantas ===
+plants = [];
+const plantPositions = [
+  new BABYLON.Vector3(9, 0.1, 10),
+  new BABYLON.Vector3(12, 0.1, 10),
+  new BABYLON.Vector3(15, 0.1, 10),
+  new BABYLON.Vector3(18, 0.1, 10),
+];
+for (let pos of plantPositions) {
+  const plant = BABYLON.MeshBuilder.CreateGround("plant", { width: 3, height: 3 }, scene);
+  plant.position = pos;
+  const plantMat = new BABYLON.StandardMaterial("plantMat", scene);
+  plantMat.diffuseTexture = new BABYLON.Texture("textures/cenouras.jpg", scene);
+  plant.material = plantMat;
+  plants.push(plant);
+}
+
+let tanquePlantasAtivos = false;
+function toggleTanquePlantas() {
+  tanquePlantasAtivos = !tanquePlantasAtivos;
+
+  if (tank) tank.isVisible = tanquePlantasAtivos;
+  if (water) water.isVisible = tanquePlantasAtivos;
+  if (faucetBase) faucetBase.isVisible = tanquePlantasAtivos;
+  if (faucetNozzle) faucetNozzle.isVisible = tanquePlantasAtivos;
+  if (calha1) calha1.isVisible = tanquePlantasAtivos;
+  if (calha2) calha2.isVisible = tanquePlantasAtivos;
+  if (calhaFrontal) calhaFrontal.isVisible = tanquePlantasAtivos;
+  if (canoComFiltro) canoComFiltro.isVisible = tanquePlantasAtivos;
+  if (wateringCan) wateringCan.isVisible = tanquePlantasAtivos;
+
+  if (jardineiro) jardineiro.setEnabled(tanquePlantasAtivos);
+  if (plants) plants.forEach(p => p.isVisible = tanquePlantasAtivos);
+
+  if (!tanquePlantasAtivos) {
+    wateringParticles.stop();
+    state = "resting";
+  } else {
+    state = "toFaucet";
+  }
+}
+
+// === Tudo começa invisível ===
+if (tank) tank.isVisible = false;
+if (water) water.isVisible = false;
+if (faucetBase) faucetBase.isVisible = false;
+if (faucetNozzle) faucetNozzle.isVisible = false;
+if (calha1) calha1.isVisible = false;
+if (calha2) calha2.isVisible = false;
+if (calhaFrontal) calhaFrontal.isVisible = false;
+if (canoComFiltro) canoComFiltro.isVisible = false;
+if (wateringCan) wateringCan.isVisible = false;
+if (jardineiro) jardineiro.setEnabled(false);
+if (plants) plants.forEach(p => p.isVisible = false);
+wateringParticles.stop();
+particleSystem.stop();
+
+const btnToggleTanque = document.getElementById("btnToggleTanque");
+btnToggleTanque.addEventListener("click", toggleTanquePlantas);
+
+const aguaContent = document.getElementById("aguaContent");
+
+btnToggleTanque.addEventListener("click", () => {
+  aguaContent.classList.toggle("hidden");
+
+  // Muda a cor do botão para indicar ativo/inativo
+  btnToggleTanque.style.backgroundColor = aguaContent.classList.contains("hidden") ? "#57c293" : "#3a7d4f";
+});
+
+
+
+
+const trashBinTypes = [
+    { name: "Papel", color: new BABYLON.Color3(0.2, 0.4, 1), position: new BABYLON.Vector3(2, 0.75, -7) },
+    { name: "Plástico", color: new BABYLON.Color3(1, 0.2, 0.2), position: new BABYLON.Vector3(3.5, 0.75, -7) },
+    { name: "Metal", color: new BABYLON.Color3(1, 1, 0.2), position: new BABYLON.Vector3(5, 0.75, -7) },
+    { name: "Vidro", color: new BABYLON.Color3(0.2, 1, 0.3), position: new BABYLON.Vector3(6.5, 0.75, -7) }
+];
+
+for (const bin of trashBinTypes) {
+    const body = BABYLON.MeshBuilder.CreateBox(bin.name + "Bin", {
+        width: 0.8,
+        height: 1.2,
+        depth: 0.8
+    }, scene);
+    body.position = bin.position;
+
+    const binMat = new BABYLON.StandardMaterial(bin.name + "Mat", scene);
+    binMat.diffuseColor = bin.color;
+    body.material = binMat;
+
+    const lid = BABYLON.MeshBuilder.CreateBox(bin.name + "Lid", {
+        width: 0.85,
+        height: 0.1,
+        depth: 0.85
+    }, scene);
+    lid.position = new BABYLON.Vector3(bin.position.x, bin.position.y + 0.65, bin.position.z);
+
+    const lidMat = new BABYLON.StandardMaterial(bin.name + "LidMat", scene);
+    lidMat.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
+    lid.material = lidMat;
+
+    // Guardar meshes para controle futuro
+    trashBins.push(body);
+    trashBins.push(lid);
+}
+
+    // Toggle exibição do card lixo
+    let binsAtivos = false;
+    const lixoContent = document.getElementById("lixoContent");
+    const btnToggleTrashBins = document.getElementById("btnToggleTrashBins");
+
+    trashBins.forEach(bin => bin.isVisible = false);
+    function toggleTrashBins() {
+      binsAtivos = !binsAtivos;
+        trashBins.forEach(bin => bin.isVisible = binsAtivos);
+      lixoContent.classList.toggle("hidden", !binsAtivos);
+      console.log("binsAtivos:", binsAtivos);
+    }
+
+document.getElementById("btnToggleTrashBins").addEventListener("click", toggleTrashBins);
+
+
+
+
+
+
+//  function criarArvore(scene, posX, posZ) {
+//     // Tronco
+//     const trunk = BABYLON.MeshBuilder.CreateCylinder("trunk", {
+//         height: 1.2,
+//         diameterTop: 0.2,
+//         diameterBottom: 0.3
+//     }, scene);
+//     trunk.position = new BABYLON.Vector3(posX, 0.6, posZ);
+//     const trunkMat = new BABYLON.StandardMaterial("trunkMat", scene);
+//     trunkMat.diffuseColor = new BABYLON.Color3(1, 0, 0.05);
+//     trunk.material = trunkMat;
+//     todasAsArvores.push(trunk);
+
+//     // Copa de folhas
+//     const leafMat = new BABYLON.StandardMaterial("leafMat", scene);
+//     leafMat.diffuseColor = new BABYLON.Color3(0.1, 0.5, 0.1);
+
+//     const leafPositions = [
+//         [posX, 1.6, posZ],
+//         [posX - 0.2, 1.8, posZ],
+//         [posX + 0.3, 1.8, posZ],
+//         [posX, 1.8, posZ],
+//         [posX, 1.8, posZ],
+//         [posX + 0.2, 2, posZ],
+//         [posX + 0.2, 2, posZ],
+//     ];
+
+//     leafPositions.forEach((pos, i) => {
+//         const leaf = BABYLON.MeshBuilder.CreateSphere("leaf" + i + "_" + posX + "_" + posZ, { diameter: 1.2 }, scene);
+//         leaf.position.set(pos[0], pos[1], pos[2]);
+//         leaf.material = leafMat;
+//         todasAsArvores.push(leaf);
+//     });
+
+// const orangeMat = new BABYLON.StandardMaterial("orangeMat", scene);
+// orangeMat.diffuseColor = new BABYLON.Color3(1, 0.5, 0);
+
+// const numOranges = 10 + Math.floor(Math.random() * 4); // 10 a 13 laranjas
+// const orangePositionsUsed = [];
+
+// for (let i = 0; i < numOranges; i++) {
+//     let tries = 0;
+//     let valid = false;
+//     let pos;
+
+//     while (!valid && tries < 20) {
+//         const theta = Math.random() * Math.PI * 2;      // ângulo horizontal
+//         const phi = Math.random() * Math.PI / 1.8;       // evita topo da copa
+
+//         const radius = 0.75; // Novo raio: um pouco fora da copa
+//         const x = Math.cos(theta) * Math.sin(phi) * radius;
+//         const y = Math.cos(phi) * radius - 0.1;         // levemente abaixo da linha média
+//         const z = Math.sin(theta) * Math.sin(phi) * radius;
+
+//         pos = new BABYLON.Vector3(posX + x, 1.8 + y, posZ + z);
+
+//         // Verifica se está longe de outras laranjas
+//         valid = orangePositionsUsed.every(prev => BABYLON.Vector3.Distance(prev, pos) > 0.3);
+//         tries++;
+//     }
+
+//     if (valid) {
+//         const orange = BABYLON.MeshBuilder.CreateSphere("orange" + i, {
+//             diameter: 0.18 + Math.random() * 0.05
+//         }, scene);
+//         orange.position = pos;
+//         orange.material = orangeMat;
+//         orangePositionsUsed.push(pos);
+//         todasAsArvores.push(orange);
+//     }
+// }
+
+//   }
+
+//   // Cria 4 árvores em posições diferentes
+//   criarArvore(scene, 9, 16);
+//   criarArvore(scene, 10, 18);
+//   criarArvore(scene, 7, 14);
+//   criarArvore(scene, 11, 17);
+
+// // Começa com as árvores invisíveis
+// todasAsArvores.forEach(mesh => {
+//   mesh.isVisible = false;
+// });
+// arvoresVisiveis = false;
+
+// // Controle do botão
+// const botaoArvores = document.getElementById("btnToggleArvores");
+// botaoArvores.addEventListener("click", () => {
+//   arvoresVisiveis = !arvoresVisiveis;
+
+//   todasAsArvores.forEach(mesh => {
+//     mesh.isVisible = arvoresVisiveis;
+//   });
+
+//   botaoArvores.textContent = "🌳";
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  return scene;
+};
+
+let scene = createScene();
+
+engine.runRenderLoop(() => {
+  scene.render();
+});
+
+window.addEventListener("resize", () => {
+  engine.resize();
+});
+
+// Botão ligar/desligar chuva
+    const btnRain = document.getElementById("btnRain");
+    btnRain.addEventListener("click", () => {
+      rainOn = !rainOn;
+      if (rainOn) {
+        particleSystem.start();
+        btnRain.textContent = "🌧️";
+      } else {
+        particleSystem.stop();
+        btnRain.textContent = "🌧️";
+      }
+    });
+    
+  </script>
+</body>
+</html> 
+
+
+
+
+
+
