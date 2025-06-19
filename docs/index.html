@@ -542,6 +542,53 @@
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
   <script>
 
+divider.addEventListener('touchstart', (e) => {
+  isDragging = true;
+  document.body.style.userSelect = 'none';
+  // Previne o scroll enquanto arrasta
+  e.preventDefault();
+}, { passive: false });
+
+window.addEventListener('touchend', () => {
+  isDragging = false;
+  document.body.style.userSelect = 'auto';
+});
+
+window.addEventListener('touchmove', (e) => {
+  if (!isDragging) return;
+
+  // Pegue o X do toque principal
+  const touch = e.touches[0];
+  const clientX = touch.clientX;
+
+  const minWidth = 100;
+  const maxWidth = window.innerWidth - minWidth;
+  let newWidth = clientX;
+
+  if (newWidth < minWidth) newWidth = minWidth;
+  if (newWidth > maxWidth) newWidth = maxWidth;
+
+  const interfaceWidth = window.innerWidth - newWidth - divider.offsetWidth;
+
+  if (interfaceWidth < window.innerWidth * 0.1) {
+    interfaceDiv.style.display = 'none';
+    divider.style.width = '1%';
+    divider.style.cursor = 'ew-resize';
+    canvas.style.width = '99%';
+  } else {
+    interfaceDiv.style.display = 'block';
+    divider.style.width = '8px';
+    divider.style.cursor = 'ew-resize';
+    canvas.style.width = newWidth + 'px';
+    interfaceDiv.style.width = interfaceWidth + 'px';
+  }
+
+  engine.resize();
+  // Previne o scroll enquanto arrasta
+  e.preventDefault();
+}, { passive: false });
+
+
     
   const btnMudancas = document.getElementById("btnMudancas");
   const mudancasMenu = document.getElementById("mudancasMenu");
